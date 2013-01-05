@@ -1,0 +1,128 @@
+<!doctype html>
+<meta charset="UTF-8">
+<title>Fire demo</title>
+<link rel="stylesheet" href="css/main.css">
+<canvas id="main"></canvas>
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<script>
+$(document).ready(function() {
+  /* Vars */
+  mainCanvas = $('#main');
+  mainCanvas.attr('height', window.innerHeight);
+  mainCanvas.attr('width', window.innerWidth);
+
+  tempCanvas = $('<canvas>')
+  tempCanvas.attr('id', 'tempCanvas')
+            .attr('height', window.innerHeight)
+            .attr('width', window.innerWidth);
+
+  mainCtx = mainCanvas.get(0).getContext('2d');
+  tempCtx = tempCanvas.get(0).getContext('2d');
+
+  canvasWidth = mainCanvas.get(0).width;
+  canvasHeight = mainCanvas.get(0).height;
+
+  cubeSize = 5;
+  colors = createColorArray();
+
+  cubesX = Math.ceil(canvasWidth / cubeSize);
+  cubesY = Math.ceil(canvasHeight / cubeSize)+2;
+
+  startdrawing();
+
+  function createColorArray() {
+    var arr = [];
+    for(var i=0; i<256; i++) {
+      arr.push('rgb(' + i + ',0,0)');
+    };
+
+    for(var i=0; i<256; i++) {
+      arr.push('rgb(255,' + i + ',0)');
+    };
+
+    for(var i=0; i<256; i++) {
+      arr.push('rgb(255,255,' + i + ')');
+    };
+    return arr;
+  }
+
+  function clearCanvas(canvas) {
+    var ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function paint() {
+    clearCanvas(mainCanvas.get(0));
+    mainCtx.drawImage(tempCanvas.get(0), 0, 0);
+  }
+
+  function drawcube(x, y, c) {
+    var cs = cubeSize;
+    tempCtx.fillStyle = colors[c];
+    tempCtx.fillRect(x * cs, y * cs, cs, cs);
+  }
+
+  function drawcubes(matrix) {
+    clearCanvas(tempCanvas.get(0));
+    for(var y=0; y < matrix.length; y++) {
+      for(var x=0; x < matrix[y].length; x++) {
+        var c = matrix[y][x];
+        if(c == 0) {
+          continue;
+        }
+        drawcube(x, y, c);
+      }
+    }
+    paint();
+  }
+
+  function newmatrix(width, height, color) {
+    matrix = [];
+    for(var y=0; y < height; y++) {
+      if(!matrix[y]) {
+        matrix[y] = [];
+      }
+      for(var x=0; x < width; x++) {
+        matrix[y][x] = color;
+      }
+    }
+    return matrix;
+  }
+
+  function startdrawing() {
+    var cubeMatrix = newmatrix(cubesX, cubesY, 0);
+
+    setInterval(function() {
+      var newrow = [];
+      for(var x = 0; x < cubesX; x++) {
+        var r = Math.floor(Math.random()*700);
+        newrow.push(colors.length - r);
+      }
+      cubeMatrix.push(newrow);
+
+      for(var y = cubesY-1; y >= 0; y--) {
+        for(var x = 0; x < cubesX; x++) {
+          var orig = cubeMatrix[y][x];
+          if(orig == 0) {
+            continue;
+          } 
+          var decay = Math.floor(Math.random() * 10);
+          var left = cubeMatrix[y+1][x-1] || orig;
+          var right = cubeMatrix[y+1][x+1] || orig;
+          var center = cubeMatrix[y+1][x];
+          var avg = Math.round((orig + left + center + right) / 4);
+          var newval = avg - decay;
+          if(newval < 0) {
+            newval = 0;
+          }
+          cubeMatrix[y][x] = newval;
+        }
+      }
+
+      cubeMatrix.shift();
+
+      drawcubes(cubeMatrix);
+    }, 50);
+  }
+});
+</script>
